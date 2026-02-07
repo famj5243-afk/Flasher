@@ -1,0 +1,210 @@
+// This is your Prisma schema file for EduNotify Sim
+// Documentation: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// User model for authentication
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String   // Hashed with argon2
+  name      String?
+  role      UserRole @default(USER)
+  
+  // Email verification
+  emailVerified Boolean @default(false)
+  verificationToken String?
+  
+  // Password reset
+  resetToken String?
+  resetTokenExpiry DateTime?
+  
+  // Two-factor authentication (optional)
+  twoFactorEnabled Boolean @default(false)
+  twoFactorSecret String?
+  
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  lastLoginAt DateTime?
+  
+  // Relations
+  templates EmailTemplate[]
+  apiKeys   ApiKey[]
+  emailLogs EmailLog[]
+  rateLimits RateLimit[]
+  
+  @@index([email])
+  @@index([createdAt])
+}
+
+enum UserRole {
+  USER
+  ADMIN
+}
+
+// Email template model
+model EmailTemplate {
+  id          String           @id @default(cuid())
+  userId      String
+  name        String
+  description String?
+  category    TemplateCategory
+  subject     String           // Can include variables
+  htmlBody    String           @db.Text // HTML content with variables
+  textBody    String?          @db.Text // Plain text version
+  
+  // Variables metadata
+  variables   String[]         // Array of variable names used
+  
+  // Status
+  isActive    Boolean          @default(true)
+  isPublic    Boolean          @default(false) // For sharing templates
+  
+  // Usage tracking
+  usageCount  Int              @default(0)
+  
+  // Timestamps
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+  
+  // Relations
+  user        User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  emailLogs   EmailLog[]
+  
+  @@index([userId])
+  @@index([category])
+  @@index([createdAt])
+  @@index([isPublic])
+}
+
+enum TemplateCategory {
+  CRYPTO_EDUCATION
+  ECOMMERCE
+  BANKING
+  LOGISTICS
+  CUSTOM
+}
+
+// API Key model for external integrations
+model ApiKey {
+  id          String   @id @default(cuid())
+  userId      String
+  name        String   // Friendly name
+  keyHash     String   @unique // SHA-256 hash of the actual key
+  keyPrefix   String   // First 8 chars for identification
+  
+  // Permissions
+  permissions String[] @default(["send_email", "read_logs"])
+  
+  // Rate limiting
+  rateLimit   Int      @default(50) // emails per hour
+  
+  // Status
+  isActive    Boolean  @default(true)
+  lastUsedAt  DateTime?
+  
+  // Timestamps
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  expiresAt   DateTime?
+  revokedAt   DateTime?
+  
+  // Relations
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  emailLogs   EmailLog[]
+  
+  @@index([userId])
+  @@index([keyHash])
+  @@index([isActive])
+}
+
+// Email log model for tracking sent emails
+model EmailLog {
+  id             String      @id @default(cuid())
+  userId         String
+  templateId     String?
+  apiKeyId       String?
+  
+  // Email details
+  recipientEmail String
+  subject        String
+  htmlBody       String      @db.Text
+  textBody       String?     @db.Text
+  
+  // Variables used
+  variables      Json?       // JSON object of variable key-value pairs
+  
+  // Metadata
+  fromEmail      String
+  replyToEmail   String?
+  
+  // Status
+  status         EmailStatus
+  errorMessage   String?     @db.Text
+  
+  // External tracking
+  externalId     String?     // SendGrid/Mailgun message ID
+  deliveredAt    DateTime?
+  openedAt       DateTime?
+  clickedAt      DateTime?
+  bouncedAt      DateTime?
+  
+  // Timestamps
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+  sentAt         DateTime?
+  
+  // Relations
+  user           User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  template       EmailTemplate? @relation(fields: [templateId], references: [id], onDelete: SetNull)
+  apiKey         ApiKey?     @relation(fields: [apiKeyId], references: [id], onDelete: SetNull)
+  
+  @@index([userId])
+  @@index([templateId])
+  @@index([status])
+  @@index([createdAt])
+  @@index([recipientEmail])
+}
+
+enum EmailStatus {
+  PENDING
+  QUEUED
+  SENT
+  DELIVERED
+  FAILED
+  BOUNCED
+}
+
+// Rate limit tracking
+model RateLimit {
+  id        String   @id @default(cuid())
+  userId    String
+  
+  // Limit tracking
+  identifier String   // user:${userId} or apikey:${keyId}
+  limitType  String   // 'email_send', 'api_request', etc.
+  count      Int      @default(0)
+  
+  // Time window
+  windowStart DateTime
+  windowEnd   DateTime
+  
+  // Timestamps
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  
+  // Relations
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@unique([identifier, limitType, windowStart])
+  @@index([identifier, limitType])
+  @@index([windowEnd])
+}
