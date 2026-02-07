@@ -1,0 +1,80 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 249 250 251; /* slate-50 */
+    --surface: 255 255 255; /* white */
+    --text-primary: 15 23 42; /* slate-900 */
+    --text-muted: 107 114 128; /* gray-500 */
+  }
+
+  .dark {
+    --background: 11 17 32; /* slate-950 */
+    --surface: 2 6 23; /* slate-950 */
+    --text-primary: 229 231 235; /* gray-200 */
+    --text-muted: 156 163 175; /* gray-400 */
+  }
+
+  * {
+    @apply border-gray-200 dark:border-gray-800;
+  }
+
+  body {
+    @apply bg-[rgb(var(--background))] text-[rgb(var(--text-primary))];
+    font-feature-settings: 'rlig' 1, 'calt' 1;
+  }
+}
+
+@layer components {
+  /* Card component */
+  .card {
+    @apply bg-[rgb(var(--surface))] border rounded-lg shadow-sm;
+  }
+
+  /* Button variants */
+  .btn {
+    @apply px-4 py-2 rounded font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2;
+  }
+
+  .btn-primary {
+    @apply bg-primary text-white hover:bg-primary-hover focus:ring-primary;
+  }
+
+  .btn-secondary {
+    @apply border-2 border-primary text-primary hover:bg-primary hover:text-white focus:ring-primary;
+  }
+
+  .btn-danger {
+    @apply bg-danger text-white hover:bg-danger-600 focus:ring-danger;
+  }
+
+  /* Input styles */
+  .input {
+    @apply w-full px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent bg-[rgb(var(--surface))];
+  }
+
+  /* Label styles */
+  .label {
+    @apply block text-sm font-medium mb-1;
+  }
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-gray-100 dark:bg-gray-900;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-gray-300 dark:bg-gray-700 rounded;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  @apply bg-gray-400 dark:bg-gray-600;
+}
