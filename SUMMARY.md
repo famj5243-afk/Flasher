@@ -4,6 +4,8 @@
 
 Successfully implemented a complete, production-ready educational email simulation platform that strictly adheres to educational and ethical guidelines.
 
+**Latest Update:** Security vulnerability in nodemailer (CVE-2024) patched by upgrading to v7.0.7.
+
 ## ✅ All Requirements Met
 
 ### Core Requirements
