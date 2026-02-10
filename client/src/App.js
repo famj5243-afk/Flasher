@@ -82,7 +82,7 @@ function App() {
               <p>{message.text}</p>
               {message.previewUrl && (
                 <a href={message.previewUrl} target="_blank" rel="noopener noreferrer" className="preview-link">
-                  View Preview
+                  Click here to view this email
                 </a>
               )}
             </div>
